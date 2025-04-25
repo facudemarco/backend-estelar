@@ -12,9 +12,8 @@ app = FastAPI()
 
 origins = [
     "http://localhost:3000",
-    "https://www.serenaviajes.com.ar",
-    "https://serenaviajes.com.ar/",
-    "https://serenaviajes.com.ar",
+    "https://estelarviajes.com",
+    "estelar-viajes-website.vercel.app",
 ]
 
 app.add_middleware(
@@ -28,7 +27,7 @@ app.add_middleware(
 
 @app.get('/')
 def read_root():
-    return {"message": "Hello World"}
+    return {"message": "Estelar Viajes API by iWeb Techonology. All rights reserved"}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
