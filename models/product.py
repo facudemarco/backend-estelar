@@ -3,12 +3,16 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import date
 
+date2 = date
+date3 = date
+
 class Product(BaseModel):
     id: Optional[str] = None
     destino: str
     subtitulo: str
     date: date
-    date2: date
+    date2: date2
+    date3: date3
     days: str
     nights: str
     regimen: str
