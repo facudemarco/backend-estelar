@@ -56,6 +56,52 @@ def getProduct(id: str):
         raise HTTPException(status_code=404, detail="Product not found.")
     return product
 
+# Filter products by periodo
+
+@router.get('/products/{periodo}')
+
+def getProductByPeriodo(periodo: str):
+    connection = getConnection()
+
+    if connection is None:
+        raise HTTPException(status_code=500, detail="Connection to the database failed.")
+
+    cursor = connection.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM `Products` WHERE periodo = %s", (periodo,))
+
+    product = cursor.fetchone()
+    cursor.close()
+
+    connection.close()
+
+    if product is None:
+        raise HTTPException(status_code=404, detail="Product not found.")
+    return product
+
+# Filter products by id in periodo
+
+@router.get('/products/{periodo}/{id}')
+
+def getProductByIdInPeriodo(periodo: str, id: str):
+    connection = getConnection()
+
+    if connection is None:
+        raise HTTPException(status_code=500, detail="Connection to the database failed.")
+
+    cursor = connection.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM `Products` WHERE id = %s AND periodo = %s", (id, periodo))
+
+    product = cursor.fetchone()
+    cursor.close()
+
+    connection.close()
+
+    if product is None:
+        raise HTTPException(status_code=404, detail="Product not found.")
+    return product
+
 # Crear producto
 @router.post('/products/create_product')
 

@@ -1,18 +1,15 @@
 from pydoc import describe
 from pydantic import BaseModel
 from typing import Optional
-from datetime import date
-
-date2 = date
-date3 = date
+from datetime import date as dt
 
 class Product(BaseModel):
     id: Optional[str] = None
     destino: str
     subtitulo: str
-    date: date
-    date2: date2
-    date3: date3
+    date: dt
+    date2: Optional[dt] = None
+    date3: Optional[dt] = None
     days: str
     nights: str
     regimen: str
