@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, APIRouter
+from fastapi import HTTPException, APIRouter
 from pydantic import BaseModel
 import smtplib
 from email.mime.text import MIMEText

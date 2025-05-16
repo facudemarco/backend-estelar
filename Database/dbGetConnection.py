@@ -1,39 +1,15 @@
-from dotenv import load_dotenv
-import mysql.connector
 import os
+from sqlalchemy import create_engine
+from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv()  
 
-def getConnection():
-    config = {
-        'user': os.getenv('USER'),
-        'password': os.getenv('PASSWORD'),
-        'host': os.getenv('HOST'),
-        'database': os.getenv('DATABASE'),
-        'raise_on_warnings': True,
-        'port': os.getenv('PORT')
-    }
+USER = os.getenv("USER")
+PASSWORD = os.getenv("PASSWORD")
+HOST = os.getenv("HOST")
+PORT = os.getenv("PORT") or "3306"
+DATABASE = os.getenv("DATABASE")
 
-    try:
-        connection = mysql.connector.connect(**config)
-        return connection
-    except mysql.connector.Error as err:
-        print("Error: {}".format(err))
-        return None
+DATABASE_URL = f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}"
 
-def getConnectionForLogin():
-    config = {
-        'user': os.getenv('USER'),
-        'password': os.getenv('PASSWORD'),
-        'host': os.getenv('HOST'),
-        'database': os.getenv('DATABASE'),
-        'raise_on_warnings': True,
-        'port': os.getenv('PORT')
-    }
-
-    try:
-        connection = mysql.connector.connect(**config)
-        return connection
-    except mysql.connector.Error as err:
-        print("Error: {}".format(err))
-        return None
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=280)

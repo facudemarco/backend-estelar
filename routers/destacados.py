@@ -1,109 +1,85 @@
 from fastapi import APIRouter, HTTPException
 from models.product import Destacados
-from Database.dbGetConnection import getConnection
+from sqlalchemy import text
+from Database.dbGetConnection import engine
 import uuid
 
 router = APIRouter()
 
 # Get all features
-
 @router.get('/destacados')
-
 def getFeatures():
-    connection = getConnection()
-
-    if connection is None:
-        raise HTTPException(status_code=500, detail="Connection to the database failed.")
-
-    cursor = connection.cursor(dictionary=True)
-
-    cursor.execute("SELECT * FROM `destacados`")
-
-    products = cursor.fetchall()
-    cursor.close()
-
-    connection.close()
-    return products
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(text("SELECT * FROM destacados"))
+            features = result.mappings().all()
+            return features
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Filter features by id
-
 @router.get('/destacados/{id}')
-
 def getFeaturesById(id: str):
-    connection = getConnection()
-
-    if connection is None:
-        raise HTTPException(status_code=500, detail="Connection to the database failed.")
-
-    cursor = connection.cursor(dictionary=True)
-
-    cursor.execute("SELECT * FROM `destacados` WHERE id = %s", (id,))
-
-    product = cursor.fetchone()
-    cursor.close()
-
-    connection.close()
-
-    if product is None:
-        raise HTTPException(status_code=404, detail="Product not found.")
-    return product
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(
+                text("SELECT * FROM destacados WHERE ID = :id"),
+                {"id": id}
+            )
+            feature = result.mappings().first()
+            if feature is None:
+                raise HTTPException(status_code=404, detail="Feature not found.")
+            return feature
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Create feature
 @router.post('/create_feature')
-
 def createFeature(features: Destacados):
-
-    connection = getConnection()
     generated_id = str(uuid.uuid4())
 
-    if connection is None:
-        raise HTTPException(status_code=500, detail="Connection to the database failed.")
-    cursor = connection.cursor()
+    query = text("""
+        INSERT INTO destacados (ID, image)
+        VALUES (:ID, :image)
+    """)
 
-    cursor.execute("INSERT INTO `destacados`(`ID`, `image`) VALUES (%s, %s)", (generated_id, features.image))
-    connection.commit()
-    cursor.close()
-
-    connection.close()
-
-    return {"message": "Feature created successfully, ID: " + generated_id}
+    try:
+        with engine.begin() as conn:
+            conn.execute(query, {
+                "ID": generated_id,
+                "image": features.image
+            })
+        return {"message": f"Feature created successfully, ID: {generated_id}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Modify feature
 @router.put('/features/{id}')
-
 def modFeature(id: str, features: Destacados):
-    connection = getConnection()
+    query = text("""
+        UPDATE destacados SET image = :image WHERE ID = :id
+    """)
 
-    if connection is None:
-        raise HTTPException(status_code=500, detail="Connection to the database failed.")
-
-    cursor = connection.cursor()
-
-    cursor.execute("UPDATE `destacados` SET image = %s WHERE id = %s", (features.image, id))
-    connection.commit()
-
-    cursor.close()
-
-    connection.close()
-
-    return {"message": "Feature updated successfully"}
+    try:
+        with engine.begin() as conn:
+            result = conn.execute(query, {
+                "id": id,
+                "image": features.image
+            })
+            if result.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Feature not found.")
+        return {"message": "Feature updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Delete feature
 @router.delete('/features/{id}')
-
 def delFeatures(id: str):
-    connection = getConnection()
-
-    if connection is None:
-        raise HTTPException(status_code=500, detail="Connection to the database failed.")
-
-    cursor = connection.cursor()
-
-    cursor.execute("DELETE FROM `destacados` WHERE id = %s", (id,))
-
-    connection.commit()
-
-    cursor.close()
-
-    connection.close()
-    return {"message": "Feature deleted successfully"}
+    try:
+        with engine.begin() as conn:
+            result = conn.execute(text("DELETE FROM destacados WHERE ID = :id"), {"id": id})
+            if result.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Feature not found.")
+        return {"message": "Feature deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

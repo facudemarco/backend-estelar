@@ -1,109 +1,98 @@
 from fastapi import APIRouter, HTTPException
 from models.product import Cartelera
-from Database.dbGetConnection import getConnection
+from sqlalchemy import text
+from Database.dbGetConnection import engine
 import uuid
 
 router = APIRouter()
 
-# Get all flyers
-
+# 🔹 Get all flyers
 @router.get('/cartelera')
-
 def getFeatures():
-    connection = getConnection()
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(text("SELECT * FROM cartelera"))
+            rows = result.mappings().all()
+            return rows
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    if connection is None:
-        raise HTTPException(status_code=500, detail="Connection to the database failed.")
-
-    cursor = connection.cursor(dictionary=True)
-
-    cursor.execute("SELECT * FROM `cartelera`")
-
-    products = cursor.fetchall()
-    cursor.close()
-
-    connection.close()
-    return products
-
-# Filter flyers by id
-
+# 🔹 Filter flyers by ID
 @router.get('/cartelera/{id}')
-
 def getFlyersById(id: str):
-    connection = getConnection()
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(
+                text("SELECT * FROM cartelera WHERE ID = :id"),
+                {"id": id}
+            )
+            row = result.mappings().first()
+            if row is None:
+                raise HTTPException(status_code=404, detail="Flyer not found.")
+            return row
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    if connection is None:
-        raise HTTPException(status_code=500, detail="Connection to the database failed.")
-
-    cursor = connection.cursor(dictionary=True)
-
-    cursor.execute("SELECT * FROM `cartelera` WHERE id = %s", (id,))
-
-    product = cursor.fetchone()
-    cursor.close()
-
-    connection.close()
-
-    if product is None:
-        raise HTTPException(status_code=404, detail="Product not found.")
-    return product
-
-# Create flyer
+# 🔹 Create flyer
 @router.post('/create_flyer')
-
 def createFlyer(flyers: Cartelera):
-
-    connection = getConnection()
     generated_id = str(uuid.uuid4())
 
-    if connection is None:
-        raise HTTPException(status_code=500, detail="Connection to the database failed.")
-    cursor = connection.cursor()
+    query = text("""
+        INSERT INTO cartelera (ID, image, descripcion, periodo)
+        VALUES (:ID, :image, :descripcion, :periodo)
+    """)
 
-    cursor.execute("INSERT INTO `cartelera`(`ID`, `image`, `descripcion`, `periodo`) VALUES (%s, %s, %s, %s)", (generated_id, flyers.image, flyers.descripcion, flyers.periodo))
-    connection.commit()
-    cursor.close()
+    try:
+        with engine.begin() as conn:
+            conn.execute(query, {
+                "ID": generated_id,
+                "image": flyers.image,
+                "descripcion": flyers.descripcion,
+                "periodo": flyers.periodo
+            })
+        return {"message": f"Flyer created successfully, ID: {generated_id}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    connection.close()
-
-    return {"message": "Flyer created successfully, ID: " + generated_id}
-
-# Modify flyer
+# 🔹 Modify flyer
 @router.put('/flyers/{id}')
-
 def modFlyer(id: str, flyers: Cartelera):
-    connection = getConnection()
+    query = text("""
+        UPDATE cartelera
+        SET image = :image,
+            descripcion = :descripcion,
+            periodo = :periodo
+        WHERE ID = :id
+    """)
 
-    if connection is None:
-        raise HTTPException(status_code=500, detail="Connection to the database failed.")
+    try:
+        with engine.begin() as conn:
+            result = conn.execute(query, {
+                "id": id,
+                "image": flyers.image,
+                "descripcion": flyers.descripcion,
+                "periodo": flyers.periodo
+            })
 
-    cursor = connection.cursor()
+            if result.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Flyer not found.")
+        return {"message": "Flyer updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    cursor.execute("UPDATE `cartelera` SET image = %s, descripcion = %s, periodo = %s WHERE id = %s", (flyers.image, flyers.descripcion, flyers.periodo, id))
-    connection.commit()
-
-    cursor.close()
-
-    connection.close()
-
-    return {"message": "Flyer updated successfully"}
-
-# Delete flyer
+# 🔹 Delete flyer
 @router.delete('/flyers/{id}')
-
 def delFlyer(id: str):
-    connection = getConnection()
+    try:
+        with engine.begin() as conn:
+            result = conn.execute(
+                text("DELETE FROM cartelera WHERE ID = :id"),
+                {"id": id}
+            )
 
-    if connection is None:
-        raise HTTPException(status_code=500, detail="Connection to the database failed.")
-
-    cursor = connection.cursor()
-
-    cursor.execute("DELETE FROM `cartelera` WHERE id = %s", (id,))
-
-    connection.commit()
-
-    cursor.close()
-
-    connection.close()
-    return {"message": "Flyer deleted successfully"}
+            if result.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Flyer not found.")
+        return {"message": "Flyer deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
