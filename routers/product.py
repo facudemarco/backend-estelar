@@ -43,7 +43,7 @@ def getProductById(id: str):
 
 # Filter products by periodo
 
-@router.get('/products/{periodo}')
+@router.get('/products/periodo/{periodo}')
 def getProductByPeriodo(periodo: str):
     try:
         with engine.connect() as connection:
@@ -51,12 +51,17 @@ def getProductByPeriodo(periodo: str):
                 text("SELECT * FROM Products WHERE periodo = :periodo"),
                 {"periodo": periodo}
             )
-            row = result.mappings().first()
+            row = result.mappings().all()
+
             if row is None:
+                print(f"[INFO] Product not found with this periodo: {periodo}")
                 raise HTTPException(status_code=404, detail="Product not found.")
+            
             return row
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"[ERROR] Error en /products/periodo/{periodo} -> {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 # Filter products by id in periodo
 
@@ -75,6 +80,7 @@ def getProductByIdInPeriodo(periodo: str, id: str):
             return row
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # Crear producto
 @router.post('/products/create_product')
