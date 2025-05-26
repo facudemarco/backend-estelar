@@ -24,8 +24,8 @@ def enviar_email(form_data: FormData):
     if not sender_password:
         raise HTTPException(status_code=500, detail="La contraseña del remitente no está configurada")
         
-    receiver_email = "iweb.contacto@gmail.com"
-    subject = f"Nuevo mensaje de contacto desde la Web de Estelar Viajes de {form_data.nombre}"
+    receiver_email = "info@estelarviajes.com"
+    subject = f"Nuevo mensaje de contacto desde la Web de {form_data.nombre}"
     body = f"Nombre: {form_data.nombre}\nApellido: {form_data.apellido}\nTeléfono: {form_data.telefono}\nEmail: {form_data.email}\nMensaje: {form_data.mensaje}"
 
     msg = MIMEMultipart()
